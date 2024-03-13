@@ -1,24 +1,45 @@
 import streamlit as st
 import pandas as pd
-from filtrar_csv import filtrar_csv
-import os
 
+# Título de la aplicación en Streamlit
 st.title('Filtrador de CSV para Analytics')
 
+# Widget de carga de archivo CSV
 uploaded_file = st.file_uploader("Elige un archivo CSV", type="csv")
+
+# Procesamiento después de que el archivo es cargado
 if uploaded_file is not None:
-    # Guardar el archivo subido en el sistema de archivos temporal
-    with open(os.path.join("temp",uploaded_file.name),"wb") as f:
-        f.write(uploaded_file.getbuffer())
-    # Procesar el archivo
-    archivo_salida = os.path.join("temp","filtrado_" + uploaded_file.name)
-    filtrar_csv(os.path.join("temp",uploaded_file.name), archivo_salida)
+    # Lectura del archivo CSV
+    df = pd.read_csv(uploaded_file)
     
-    st.success('¡Archivo procesado con éxito!')
-    with open(archivo_salida, "rb") as file:
-        btn = st.download_button(
+    # Si el archivo CSV contiene al menos una columna, proceder
+    if len(df.columns) > 0:
+        # Permitir al usuario seleccionar la columna de interés a través de un dropdown
+        columna_seleccionada = st.selectbox('Selecciona la columna que quieres conservar:', df.columns)
+        
+        # Filtrar filas que contengan '/es/videos/' o '/en/videos/' en la columna seleccionada
+        filtro = '/es/videos/|/en/videos/'
+        df_filtrado = df[df[columna_seleccionada].str.contains(filtro, na=False)]
+        
+        # Conservar solo la columna seleccionada por el usuario
+        df_filtrado = df_filtrado[[columna_seleccionada]]
+        
+        # Mostrar los datos filtrados en la interfaz de Streamlit
+        st.write("Aquí están tus datos filtrados:")
+        st.dataframe(df_filtrado)
+        
+        # Convertir el DataFrame filtrado a CSV para permitir la descarga
+        csv = df_filtrado.to_csv(index=False).encode('utf-8')
+        
+        # Botón de descarga para el archivo CSV filtrado
+        st.download_button(
             label="Descargar archivo filtrado",
-            data=file,
-            file_name="filtrado_" + uploaded_file.name,
-            mime="text/csv",
+            data=csv,
+            file_name='archivo_filtrado.csv',
+            mime='text/csv',
         )
+    else:
+        st.error("El archivo CSV parece estar vacío. Por favor, carga un archivo con datos.")
+else:
+    st.info("Por favor, carga un archivo CSV para comenzar.")
+
