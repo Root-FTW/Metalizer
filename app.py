@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 import re  # Para expresiones regulares
+from io import BytesIO  # Para manejar la salida en memoria
 
 st.title('Filtrador de CSV para Analytics')
 
@@ -17,18 +18,13 @@ if uploaded_file is not None and numero_inicial < numero_final:
 
     # Función para filtrar las filas basadas en el rango de números dentro de las URLs
     def filtrar_por_rango(df, col, inicio, fin):
-        # Compilar la expresión regular que coincide con el patrón /videos/{número}/
         patron = re.compile(r'/videos/(\d+)/')
-        
-        # Función para aplicar a cada valor de la columna
         def coincide_con_rango(url):
             coincidencias = patron.search(url)
             if coincidencias:
                 numero = int(coincidencias.group(1))
                 return inicio <= numero <= fin
             return False
-        
-        # Filtrar el DataFrame usando la función definida
         return df[df[col].apply(coincide_con_rango)]
 
     # Aplicar el filtrado
@@ -38,13 +34,17 @@ if uploaded_file is not None and numero_inicial < numero_final:
     st.write("Vista previa de los datos filtrados:")
     st.dataframe(df_filtrado)
     
-    # Opción para descargar el archivo CSV filtrado
-    csv = df_filtrado.to_csv(index=False).encode('utf-8')
+    # Convertir el DataFrame filtrado a un archivo Excel en memoria
+    output = BytesIO()
+    with pd.ExcelWriter(output, engine='openpyxl') as writer:
+        df_filtrado.to_excel(writer, index=False)
+    
+    # Crear un botón de descarga para el archivo Excel filtrado
     st.download_button(
-        label="Descargar archivo CSV filtrado",
-        data=csv,
-        file_name='datos_filtrados.csv',
-        mime='text/csv',
+        label="Descargar datos filtrados como Excel",
+        data=output.getvalue(),
+        file_name='datos_filtrados.xlsx',
+        mime='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
     )
 else:
     st.write("Por favor, carga un archivo y asegúrate de que el número inicial sea menor que el número final.")
