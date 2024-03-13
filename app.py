@@ -15,9 +15,6 @@ if uploaded_file is not None:
     # Permitir al usuario seleccionar la columna de interés a través de un dropdown
     columna_seleccionada = st.selectbox('Selecciona la columna que quieres conservar:', df.columns)
     
-    # Asegurarse de que la columna seleccionada sea de tipo string
-    df[columna_seleccionada] = df[columna_seleccionada].astype(str)
-    
     # Filtrar filas que contengan '/es/videos/' o '/en/videos/' en la columna seleccionada
     filtro = '/es/videos/|/en/videos/'
     df_filtrado = df[df[columna_seleccionada].str.contains(filtro, na=False)]
