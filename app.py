@@ -21,7 +21,7 @@ st.markdown("""
     """, unsafe_allow_html=True)
 st.markdown('<p class="big-font">Metalizer</p>', unsafe_allow_html=True)
 
-st.write("Una herramienta para filtrar y analizar tus datos de manera metálica.")
+st.write("Descubre insights poderosos en los datos de tráfico de Metatube con Metalizer, tu analizador de GA4.")
 
 # Solicitar al usuario que cargue un archivo CSV y seleccione opciones
 col1, col2, col3 = st.columns(3)
