@@ -6,9 +6,12 @@ from io import BytesIO
 # Configuración de la página
 st.set_page_config(page_title="Metalizer", page_icon=":metal:", layout="wide")
 
-# Mostrar el logo de Metatube
-logo_url = "https://www.metatube.com/assets/layout/css/img/LogoFooter.svg"
-st.image(logo_url, width=449)
+# Mostrar el logo de Metatube como un enlace
+st.markdown("""
+<a href="https://metatube.com/">
+    <img src="https://www.metatube.com/assets/layout/css/img/LogoFooter.svg" alt="Metatube Logo" width="449">
+</a>
+""", unsafe_allow_html=True)
 
 # Estilos personalizados y título grande
 st.markdown("""
@@ -21,6 +24,7 @@ st.markdown("""
     """, unsafe_allow_html=True)
 st.markdown('<p class="big-font">Metalizer</p>', unsafe_allow_html=True)
 
+# Descripción actualizada
 st.write("Descubre insights poderosos en los datos de tráfico de Metatube con Metalizer, tu analizador de GA4.")
 
 # Solicitar al usuario que cargue un archivo CSV y seleccione opciones
