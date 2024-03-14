@@ -39,7 +39,7 @@ python --version
 Clona el repositorio de Metalizer en tu máquina local utilizando Git:
 
 ```sh
-git clone https://github.com/tu_usuario/metalizer.git
+git clone https://github.com/Root-FTW/metalizer.git
 cd metalizer
 ```
 
