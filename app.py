@@ -40,7 +40,8 @@ opcion_idioma = st.selectbox('Selecciona el idioma para filtrar (o Todos para no
 
 # Función principal para filtrar los datos
 if uploaded_file is not None and numero_inicial < numero_final:
-    df = pd.read_csv(uploaded_file, skiprows=9, delimiter=',')
+    # Se cambió aquí para no omitir las primeras 9 filas
+    df = pd.read_csv(uploaded_file, delimiter=',')
 
     if opcion_idioma != 'Todos':
         df = df[df['Page path and screen class'].str.startswith(opcion_idioma)]
