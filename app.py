@@ -40,7 +40,6 @@ opcion_idioma = st.selectbox('Selecciona el idioma para filtrar (o Todos para no
 
 # Función principal para filtrar los datos
 if uploaded_file is not None and numero_inicial < numero_final:
-    # Se cambió aquí para no omitir las primeras 9 filas
     df = pd.read_csv(uploaded_file, delimiter=',')
 
     if opcion_idioma != 'Todos':
@@ -49,7 +48,8 @@ if uploaded_file is not None and numero_inicial < numero_final:
     def filtrar_por_rango(df, col, inicio, fin):
         patron = re.compile(r'/videos/(\d+)/')
         def coincide_con_rango(url):
-            coincidencias = patron.search(url)
+            url_str = str(url)  # Convertir explícitamente el valor a string
+            coincidencias = patron.search(url_str)
             if coincidencias:
                 numero = int(coincidencias.group(1))
                 return inicio <= numero <= fin
