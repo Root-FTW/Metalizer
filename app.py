@@ -2,6 +2,24 @@ import streamlit as st
 import pandas as pd
 import re
 from io import BytesIO
+import matplotlib.pyplot as plt
+from wordcloud import WordCloud, STOPWORDS
+import requests
+
+# Función para cargar stopwords desde un enlace
+def cargar_stopwords(url):
+    response = requests.get(url)
+    stopwords = set(response.text.splitlines())
+    return stopwords
+
+# Cargar las listas de stopwords
+spanish_stopwords_url = "https://raw.githubusercontent.com/Alir3z4/stop-words/master/spanish.txt"
+english_stopwords_url = "https://raw.githubusercontent.com/Alir3z4/stop-words/master/english.txt"
+
+spanish_stopwords = cargar_stopwords(spanish_stopwords_url)
+english_stopwords = cargar_stopwords(english_stopwords_url)
+
+stopwords = spanish_stopwords.union(english_stopwords)
 
 # Configuración de la página
 st.set_page_config(page_title="Metalizer", page_icon=":metal:", layout="wide")
@@ -19,6 +37,31 @@ st.markdown("""
     .big-font {
         font-size:30px !important;
         font-weight: bold;
+    }
+    .tooltip {
+        position: relative;
+        display: inline-block;
+        border-bottom: 1px dotted black;
+    }
+    .tooltip .tooltiptext {
+        visibility: hidden;
+        width: 160px;
+        background-color: black;
+        color: #fff;
+        text-align: center;
+        border-radius: 5px;
+        padding: 5px;
+        position: absolute;
+        z-index: 1;
+        bottom: 125%; /* Position the tooltip above the text */
+        left: 50%;
+        margin-left: -80px;
+        opacity: 0;
+        transition: opacity 0.3s;
+    }
+    .tooltip:hover .tooltiptext {
+        visibility: visible;
+        opacity: 1;
     }
     </style>
     """, unsafe_allow_html=True)
@@ -38,8 +81,15 @@ with col3:
 
 opcion_idioma = st.selectbox('Selecciona el idioma para filtrar (o Todos para no filtrar):', ['Todos', '/es/', '/en/'])
 
+# Solicitar al usuario que seleccione un rango de usuarios
+col4, col5 = st.columns(2)
+with col4:
+    users_min = st.number_input("Cantidad mínima de usuarios", min_value=0, value=0, step=1, format="%d")
+with col5:
+    users_max = st.number_input("Cantidad máxima de usuarios", min_value=0, value=1000000, step=1, format="%d")
+
 # Función principal para filtrar los datos
-if uploaded_file is not None and numero_inicial < numero_final:
+if uploaded_file is not None and numero_inicial < numero_final and users_min < users_max:
     df = pd.read_csv(uploaded_file, delimiter=',')
 
     if opcion_idioma != 'Todos':
@@ -55,16 +105,107 @@ if uploaded_file is not None and numero_inicial < numero_final:
                 return inicio <= numero <= fin
             return False
         return df[df[col].apply(coincide_con_rango)]
-    
+
     df_filtrado = filtrar_por_rango(df, "Page path and screen class", numero_inicial, numero_final)
+
+    # Filtrar por cantidad de usuarios
+    df_filtrado = df_filtrado[(df_filtrado['Total users'] >= users_min) & (df_filtrado['Total users'] <= users_max)]
     
     st.write("Vista previa de los datos filtrados:")
-    st.dataframe(df_filtrado)
-    
+    col6, col7 = st.columns([2, 1])
+    with col6:
+        st.dataframe(df_filtrado)
+
+    # Calcular las estadísticas de la columna "Total users"
+    if 'Total users' in df_filtrado.columns:
+        suma_total_users = df_filtrado['Total users'].sum()
+        suma_total_users_formateada = "{:,}".format(suma_total_users)
+        promedio_total_users = df_filtrado['Total users'].mean()
+        mediana_total_users = df_filtrado['Total users'].median()
+        min_total_users = df_filtrado['Total users'].min()
+        max_total_users = df_filtrado['Total users'].max()
+
+        with col7:
+            st.markdown(f"""
+            <div class="tooltip">Suma de 'Total users' en los datos filtrados: {suma_total_users_formateada}
+                <span class="tooltiptext">La suma total de todos los usuarios en los datos filtrados.</span>
+            </div>
+            """, unsafe_allow_html=True)
+
+            st.markdown(f"""
+            <div class="tooltip">Promedio de 'Total users' en los datos filtrados: {promedio_total_users}
+                <span class="tooltiptext">El promedio de usuarios por página en los datos filtrados.</span>
+            </div>
+            """, unsafe_allow_html=True)
+
+            st.markdown(f"""
+            <div class="tooltip">Mediana de 'Total users' en los datos filtrados: {mediana_total_users}
+                <span class="tooltiptext">El valor central de usuarios cuando los datos están ordenados.</span>
+            </div>
+            """, unsafe_allow_html=True)
+
+            st.markdown(f"""
+            <div class="tooltip">Valor mínimo de 'Total users' en los datos filtrados: {min_total_users}
+                <span class="tooltiptext">El menor número de usuarios en los datos filtrados.</span>
+            </div>
+            """, unsafe_allow_html=True)
+
+            st.markdown(f"""
+            <div class="tooltip">Valor máximo de 'Total users' en los datos filtrados: {max_total_users}
+                <span class="tooltiptext">El mayor número de usuarios en los datos filtrados.</span>
+            </div>
+            """, unsafe_allow_html=True)
+
+    # Crear gráfica de pastel para mostrar proporción de usuarios por idioma
+    df_filtrado['Idioma'] = df_filtrado['Page path and screen class'].apply(lambda x: 'es' if '/es/' in x else ('en' if '/en/' in x else 'Otros'))
+    usuarios_por_idioma = df_filtrado.groupby('Idioma')['Total users'].sum()
+
+    fig_pie, ax_pie = plt.subplots(figsize=(5, 5))
+    ax_pie.pie(usuarios_por_idioma, labels=usuarios_por_idioma.index, autopct='%1.1f%%', startangle=90)
+    ax_pie.axis('equal')  # Equal aspect ratio ensures that pie is drawn as a circle.
+
+    # Generar nube de palabras
+    text = " ".join(df_filtrado['Page path and screen class'])
+    wordcloud = WordCloud(width=400, height=400, background_color='white', stopwords=stopwords).generate(text)
+
+    # Mostrar la nube de palabras
+    fig_wordcloud, ax_wordcloud = plt.subplots(figsize=(5, 5))
+    ax_wordcloud.imshow(wordcloud, interpolation='bilinear')
+    ax_wordcloud.axis('off')
+
+    col8, col9 = st.columns(2)
+    with col8:
+        st.pyplot(fig_pie)
+    with col9:
+        st.pyplot(fig_wordcloud)
+
+    # Botones para descargar las gráficas como PNG
+    pie_img = BytesIO()
+    fig_pie.savefig(pie_img, format='png')
+    pie_img.seek(0)
+
+    wordcloud_img = BytesIO()
+    fig_wordcloud.savefig(wordcloud_img, format='png')
+    wordcloud_img.seek(0)
+
+    st.download_button(
+        label="Descargar gráfica de pastel como PNG",
+        data=pie_img,
+        file_name='grafica_pastel.png',
+        mime='image/png'
+    )
+
+    st.download_button(
+        label="Descargar nube de palabras como PNG",
+        data=wordcloud_img,
+        file_name='nube_palabras.png',
+        mime='image/png'
+    )
+
     output = BytesIO()
     with pd.ExcelWriter(output, engine='openpyxl') as writer:
         df_filtrado.to_excel(writer, index=False)
-    
+
     st.download_button(
         label="Descargar datos filtrados como Excel",
         data=output.getvalue(),
@@ -72,4 +213,4 @@ if uploaded_file is not None and numero_inicial < numero_final:
         mime='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
     )
 else:
-    st.write("Por favor, carga un archivo y asegúrate de que el número inicial sea menor que el número final.")
+    st.write("Por favor, carga un archivo y asegúrate de que el número inicial y la cantidad mínima de usuarios sean menores que el número final y la cantidad máxima de usuarios, respectivamente.")
