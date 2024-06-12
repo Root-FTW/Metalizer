@@ -121,11 +121,19 @@ if uploaded_file is not None and numero_inicial < numero_final and users_min < u
         suma_total_users = df_filtrado['Total users'].sum()
         suma_total_users_formateada = "{:,}".format(suma_total_users)
         promedio_total_users = df_filtrado['Total users'].mean()
+        promedio_total_users_formateado = "{:.2f}".format(promedio_total_users)
         mediana_total_users = df_filtrado['Total users'].median()
         min_total_users = df_filtrado['Total users'].min()
         max_total_users = df_filtrado['Total users'].max()
+        cantidad_urls_filtradas = len(df_filtrado)
 
         with col7:
+            st.markdown(f"""
+            <div class="tooltip">Cantidad de URLs filtradas: {cantidad_urls_filtradas}
+                <span class="tooltiptext">El número total de URLs después de aplicar los filtros.</span>
+            </div>
+            """, unsafe_allow_html=True)
+
             st.markdown(f"""
             <div class="tooltip">Suma de 'Total users' en los datos filtrados: {suma_total_users_formateada}
                 <span class="tooltiptext">La suma total de todos los usuarios en los datos filtrados.</span>
@@ -133,7 +141,7 @@ if uploaded_file is not None and numero_inicial < numero_final and users_min < u
             """, unsafe_allow_html=True)
 
             st.markdown(f"""
-            <div class="tooltip">Promedio de 'Total users' en los datos filtrados: {promedio_total_users}
+            <div class="tooltip">Promedio de 'Total users' en los datos filtrados: {promedio_total_users_formateado}
                 <span class="tooltiptext">El promedio de usuarios por página en los datos filtrados.</span>
             </div>
             """, unsafe_allow_html=True)
@@ -163,6 +171,7 @@ if uploaded_file is not None and numero_inicial < numero_final and users_min < u
     fig_pie, ax_pie = plt.subplots(figsize=(5, 5))
     ax_pie.pie(usuarios_por_idioma, labels=usuarios_por_idioma.index, autopct='%1.1f%%', startangle=90)
     ax_pie.axis('equal')  # Equal aspect ratio ensures that pie is drawn as a circle.
+    fig_pie.suptitle('Proporción de Usuarios por Idioma')
 
     # Generar nube de palabras
     text = " ".join(df_filtrado['Page path and screen class'])
@@ -172,6 +181,7 @@ if uploaded_file is not None and numero_inicial < numero_final and users_min < u
     fig_wordcloud, ax_wordcloud = plt.subplots(figsize=(5, 5))
     ax_wordcloud.imshow(wordcloud, interpolation='bilinear')
     ax_wordcloud.axis('off')
+    fig_wordcloud.suptitle('Nube de Palabras de URLs Filtradas')
 
     col8, col9 = st.columns(2)
     with col8:
