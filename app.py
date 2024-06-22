@@ -82,8 +82,21 @@ with col3:
 if uploaded_file is not None:
     df = pd.read_csv(uploaded_file, delimiter=',')
 
+    # Función para extraer el tema de la URL
+    def extraer_tema(url):
+        try:
+            if isinstance(url, str):  # Verificar si la URL es una cadena
+                match = re.match(r'/[^/]+/([^/]+)/\d+/', url)
+                if match:
+                    return match.group(1)
+        except Exception as e:
+            st.write(f"Error procesando la URL: {url} - {e}")
+        return None
+
+    # Aplicar la función al DataFrame
+    df['Tema'] = df['Page path and screen class'].apply(extraer_tema)
+
     # Extraer todos los temas únicos
-    df['Tema'] = df['Page path and screen class'].apply(lambda x: re.match(r'/[^/]+/([^/]+)/\d+/', x).group(1) if re.match(r'/[^/]+/([^/]+)/\d+/', x) else None)
     temas_unicos = df['Tema'].dropna().unique()
 
     opcion_tema = st.multiselect('Selecciona el tema para filtrar:', temas_unicos, default=temas_unicos)
